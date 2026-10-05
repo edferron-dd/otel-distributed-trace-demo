@@ -53,13 +53,15 @@ Grant the service principal **Contributor** (or Website Contributor) scoped to t
 - `AZURE_TENANT_ID`
 - `AZURE_SUBSCRIPTION_ID`
 
-### Optional GitHub repository **variables** (only if app names differ from defaults)
+### Optional GitHub repository **variables** (only if defaults differ)
 - `PUBLISHER_APP_NAME`
 - `SUBSCRIBER_APP_NAME`
+- `AZURE_RESOURCE_GROUP` (defaults to `ferron-psa-rg`)
 
-> The workflows use a `production` environment. Either create that environment in
-> repo settings (and add the federated-credential `environment:production` subject),
-> or remove the `environment: production` line from the workflows.
+> The workflows deploy on push to `main` (or via `workflow_dispatch`) using the
+> `repo:…:ref:refs/heads/main` federated credential — no GitHub environment required.
+> The Datadog `env` tag is `demo`, set via `deployment.environment=demo` in
+> `OTEL_RESOURCE_ATTRIBUTES` on each app.
 
 ## 3. App settings to configure in Azure
 

@@ -1,0 +1,154 @@
+@model Publisher.Models.MessageViewModel
+@{
+    ViewData["Title"] = "Send Message";
+}
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Send Message to demo-topic</h5>
+            </div>
+            <div class="card-body">
+                @if (TempData["Success"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show">
+                        @TempData["Success"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        @TempData["Error"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                <form asp-action="Send" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label asp-for="Subject" class="form-label fw-semibold">Subject <span class="text-muted fw-normal">(optional)</span></label>
+                        <input asp-for="Subject" class="form-control" placeholder="e.g. OrderCreated" />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="MessageBody" class="form-label fw-semibold">Message Body <span class="text-danger">*</span></label>
+                        <textarea asp-for="MessageBody" class="form-control" rows="4" placeholder="Enter your message here..."></textarea>
+                        <span asp-validation-for="MessageBody" class="text-danger small"></span>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Send to demo-topic</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">Sent to demo-topic <span class="badge bg-secondary">@Model.SentMessages.Count</span></h5>
+            </div>
+            <div class="card-body p-0" style="max-height: 260px; overflow-y: auto;">
+                @if (!Model.SentMessages.Any())
+                {
+                    <p class="text-muted p-3 mb-0">No messages sent yet.</p>
+                }
+                else
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var msg in Model.SentMessages)
+                        {
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1 me-2">
+                                        @if (!string.IsNullOrEmpty(msg.Subject))
+                                        {
+                                            <span class="badge bg-info text-dark mb-1">@msg.Subject</span>
+                                        }
+                                        <p class="mb-1 small text-break">@msg.Body</p>
+                                        <small class="text-muted">ID: @msg.MessageId[..8]...</small>
+                                    </div>
+                                    <small class="text-muted text-nowrap">@msg.SentAt.ToLocalTime().ToString("HH:mm:ss")</small>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">Send Message to demo-q</h5>
+            </div>
+            <div class="card-body">
+                @if (TempData["QueueSuccess"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show">
+                        @TempData["QueueSuccess"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+                @if (TempData["QueueError"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        @TempData["QueueError"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                <form asp-action="SendToQueue" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label asp-for="QueueSubject" class="form-label fw-semibold">Subject <span class="text-muted fw-normal">(optional)</span></label>
+                        <input asp-for="QueueSubject" class="form-control" placeholder="e.g. QueueEvent" />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="QueueMessageBody" class="form-label fw-semibold">Message Body <span class="text-danger">*</span></label>
+                        <textarea asp-for="QueueMessageBody" class="form-control" rows="4" placeholder="Enter your message here..."></textarea>
+                        <span asp-validation-for="QueueMessageBody" class="text-danger small"></span>
+                    </div>
+                    <button type="submit" class="btn btn-warning w-100">Send to demo-q</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">Sent to demo-q <span class="badge bg-secondary">@Model.SentQueueMessages.Count</span></h5>
+            </div>
+            <div class="card-body p-0" style="max-height: 260px; overflow-y: auto;">
+                @if (!Model.SentQueueMessages.Any())
+                {
+                    <p class="text-muted p-3 mb-0">No messages sent yet.</p>
+                }
+                else
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var msg in Model.SentQueueMessages)
+                        {
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1 me-2">
+                                        @if (!string.IsNullOrEmpty(msg.Subject))
+                                        {
+                                            <span class="badge bg-warning text-dark mb-1">@msg.Subject</span>
+                                        }
+                                        <p class="mb-1 small text-break">@msg.Body</p>
+                                        <small class="text-muted">ID: @msg.MessageId[..8]...</small>
+                                    </div>
+                                    <small class="text-muted text-nowrap">@msg.SentAt.ToLocalTime().ToString("HH:mm:ss")</small>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</div>

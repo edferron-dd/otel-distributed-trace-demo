@@ -1,0 +1,153 @@
+@model Subscriber.Models.SubscriberViewModel
+@{
+    ViewData["Title"] = "Received Messages";
+}
+
+@* ---- Topic messages ---- *@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">
+        demo-topic Messages
+        <span class="badge bg-success ms-2">@Model.TopicMessages.Count</span>
+    </h4>
+    <div class="d-flex align-items-center gap-2">
+        <span id="last-refresh" class="text-muted small"></span>
+        <button class="btn btn-outline-success btn-sm" onclick="location.reload()">Refresh</button>
+    </div>
+</div>
+
+@if (!Model.TopicMessages.Any())
+{
+    <div class="card shadow-sm mb-4">
+        <div class="card-body text-center py-4">
+            <p class="text-muted mb-0">Waiting for messages on <strong>demo-topic</strong>...</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card shadow-sm mb-4">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 160px;">Received At</th>
+                        <th style="width: 120px;">Subject</th>
+                        <th>Message Body</th>
+                        <th style="width: 120px;">Message ID</th>
+                        <th style="width: 80px;">Seq #</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var msg in Model.TopicMessages)
+                    {
+                        <tr>
+                            <td class="small text-nowrap">
+                                @msg.ReceivedAt.ToLocalTime().ToString("MM/dd HH:mm:ss")
+                                <br />
+                                <span class="text-muted" style="font-size:0.75em;">Enqueued: @msg.EnqueuedTimeUtc</span>
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(msg.Subject))
+                                {
+                                    <span class="badge bg-info text-dark">@msg.Subject</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">—</span>
+                                }
+                            </td>
+                            <td class="small text-break">@msg.Body</td>
+                            <td class="small text-muted text-break" style="font-size:0.75em;">@msg.MessageId[..Math.Min(12, msg.MessageId.Length)]...</td>
+                            <td class="small text-muted">@msg.SequenceNumber</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@* ---- Queue messages ---- *@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">
+        demo-q Messages
+        <span class="badge bg-warning text-dark ms-2">@Model.QueueMessages.Count</span>
+    </h4>
+    <div>
+        @if (TempData["QueueInfo"] != null)
+        {
+            <span class="text-success small me-2">@TempData["QueueInfo"]</span>
+        }
+        @if (TempData["QueueError"] != null)
+        {
+            <span class="text-danger small me-2">@TempData["QueueError"]</span>
+        }
+        <form asp-action="ReadQueue" method="post" class="d-inline">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-warning btn-sm">Read demo-q</button>
+        </form>
+    </div>
+</div>
+
+@if (!Model.QueueMessages.Any())
+{
+    <div class="card shadow-sm">
+        <div class="card-body text-center py-4">
+            <p class="text-muted mb-0">No messages read from <strong>demo-q</strong> yet. Click <strong>Read demo-q</strong> to pull messages.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 160px;">Received At</th>
+                        <th style="width: 120px;">Subject</th>
+                        <th>Message Body</th>
+                        <th style="width: 120px;">Message ID</th>
+                        <th style="width: 80px;">Seq #</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var msg in Model.QueueMessages)
+                    {
+                        <tr>
+                            <td class="small text-nowrap">
+                                @msg.ReceivedAt.ToLocalTime().ToString("MM/dd HH:mm:ss")
+                                <br />
+                                <span class="text-muted" style="font-size:0.75em;">Enqueued: @msg.EnqueuedTimeUtc</span>
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(msg.Subject))
+                                {
+                                    <span class="badge bg-warning text-dark">@msg.Subject</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">—</span>
+                                }
+                            </td>
+                            <td class="small text-break">@msg.Body</td>
+                            <td class="small text-muted text-break" style="font-size:0.75em;">@msg.MessageId[..Math.Min(12, msg.MessageId.Length)]...</td>
+                            <td class="small text-muted">@msg.SequenceNumber</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function updateRefreshTime() {
+            document.getElementById('last-refresh').textContent =
+                'Last refreshed: ' + new Date().toLocaleTimeString();
+        }
+        updateRefreshTime();
+        setTimeout(() => location.reload(), 10000);
+    </script>
+}

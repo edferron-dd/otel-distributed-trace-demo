@@ -71,11 +71,17 @@ OTLP intake for the US3 site** over `http/protobuf`.
 > inject `OTEL_EXPORTER_OTLP_HEADERS=dd-api-key=${{ secrets.DD_API_KEY }}` at deploy
 > time from the `DD_API_KEY` GitHub secret, so the key only lives in GitHub.
 
+Per Datadog's [serverless OTLP ingest guide (Azure)](https://docs.datadoghq.com/opentelemetry/setup/otlp_ingest/serverless?tab=azure),
+`OTEL_SERVICE_NAME` and the `cloud.*` resource attributes are set so traces are
+correctly identified and tagged in Datadog (`cloud.platform` differs per host type).
+
 **Publisher (Web App → Configuration → Application settings):**
 ```
 OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = https://otlp.us3.datadoghq.com/v1/traces
 OTEL_EXPORTER_OTLP_PROTOCOL         = http/protobuf
 OTEL_EXPORTER_OTLP_HEADERS          = dd-api-key=<injected by deploy workflow>
+OTEL_SERVICE_NAME                   = publisher
+OTEL_RESOURCE_ATTRIBUTES            = cloud.provider=azure,cloud.platform=azure.app_service,cloud.resource_id=/subscriptions/<sub>/resourceGroups/ferron-psa-rg/providers/Microsoft.Web/sites/otel-distributed-trace-demo-publisher
 ServiceBus__FullyQualifiedNamespace = central-dd-demo.servicebus.windows.net
 ```
 
@@ -84,6 +90,8 @@ ServiceBus__FullyQualifiedNamespace = central-dd-demo.servicebus.windows.net
 OTEL_EXPORTER_OTLP_TRACES_ENDPOINT            = https://otlp.us3.datadoghq.com/v1/traces
 OTEL_EXPORTER_OTLP_PROTOCOL                   = http/protobuf
 OTEL_EXPORTER_OTLP_HEADERS                    = dd-api-key=<injected by deploy workflow>
+OTEL_SERVICE_NAME                             = subscriber
+OTEL_RESOURCE_ATTRIBUTES                      = cloud.provider=azure,cloud.platform=azure.functions,cloud.resource_id=/subscriptions/<sub>/resourceGroups/ferron-psa-rg/providers/Microsoft.Web/sites/otel-distributed-trace-demo-subscriber
 ServiceBusConnection__fullyQualifiedNamespace = central-dd-demo.servicebus.windows.net
 ServiceBus__TopicName                         = demo-topic
 ServiceBus__SubscriptionName                  = subscriber-subscription

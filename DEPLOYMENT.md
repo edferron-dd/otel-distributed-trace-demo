@@ -10,24 +10,28 @@ via GitHub Actions using **OIDC federated credentials** (no stored publish profi
 
 ## 1. One-time Azure setup
 
+All resources are created in the **`ferron-psa-rg`** resource group.
+
 ```bash
+RG=ferron-psa-rg
+
 # Create the shared plan (Linux). B1 or higher; Functions can share this plan.
-az appservice plan create -g <resource-group> -n otel-distributed-tracing-demo --sku B1 --is-linux
+az appservice plan create -g "$RG" -n otel-distributed-tracing-demo --sku B1 --is-linux
 
 # Web App for the Publisher (.NET 10)
-az webapp create -g <resource-group> -p otel-distributed-tracing-demo \
+az webapp create -g "$RG" -p otel-distributed-tracing-demo \
   -n otel-distributed-trace-demo-publisher --runtime "DOTNETCORE:10.0"
 
 # Function App for the Subscriber (.NET 10 isolated) on the same plan
-az functionapp create -g <resource-group> --plan otel-distributed-tracing-demo \
+az functionapp create -g "$RG" --plan otel-distributed-tracing-demo \
   -n otel-distributed-trace-demo-subscriber \
   --runtime dotnet-isolated --runtime-version 10 --functions-version 4 \
   --storage-account <storageaccount>
 
 # Give both apps a managed identity and grant "Azure Service Bus Data Sender/Receiver"
 # on the Service Bus namespace central-dd-demo.
-az webapp identity assign -g <rg> -n otel-distributed-trace-demo-publisher
-az functionapp identity assign -g <rg> -n otel-distributed-trace-demo-subscriber
+az webapp identity assign -g "$RG" -n otel-distributed-trace-demo-publisher
+az functionapp identity assign -g "$RG" -n otel-distributed-trace-demo-subscriber
 ```
 
 ## 2. OIDC federated credential (for GitHub Actions)
@@ -41,7 +45,8 @@ az ad app create --display-name otel-distributed-trace-demo-deploy
 #   repo:edferron-dd/otel-distributed-trace-demo:environment:production
 ```
 
-Grant the service principal **Contributor** (or Website Contributor) on the resource group.
+Grant the service principal **Contributor** (or Website Contributor) scoped to the
+`ferron-psa-rg` resource group.
 
 ### Required GitHub repository **secrets**
 - `AZURE_CLIENT_ID`

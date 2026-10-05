@@ -67,7 +67,7 @@ Grant the service principal **Contributor** (or Website Contributor) scoped to t
 
 Both apps read OpenTelemetry config from the standard OTLP environment variables and
 connect to Service Bus with their managed identity. Traces are sent to **Datadog's
-OTLP intake for the US3 site** over `http/protobuf`.
+OTLP intake** (`https://otlp.datadoghq.com/v1/traces`) over `http/protobuf`.
 
 > The `dd-api-key` header is **not** stored in Azure by hand. The deploy workflows
 > inject `OTEL_EXPORTER_OTLP_HEADERS=dd-api-key=${{ secrets.DD_API_KEY }}` at deploy
@@ -79,7 +79,7 @@ correctly identified and tagged in Datadog (`cloud.platform` differs per host ty
 
 **Publisher (Web App → Configuration → Application settings):**
 ```
-OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = https://otlp.us3.datadoghq.com/v1/traces
+OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = https://otlp.datadoghq.com/v1/traces
 OTEL_EXPORTER_OTLP_PROTOCOL         = http/protobuf
 OTEL_EXPORTER_OTLP_HEADERS          = dd-api-key=<injected by deploy workflow>
 OTEL_SERVICE_NAME                   = publisher
@@ -89,7 +89,7 @@ ServiceBus__FullyQualifiedNamespace = central-dd-demo.servicebus.windows.net
 
 **Subscriber (Function App → Configuration → Application settings):**
 ```
-OTEL_EXPORTER_OTLP_TRACES_ENDPOINT            = https://otlp.us3.datadoghq.com/v1/traces
+OTEL_EXPORTER_OTLP_TRACES_ENDPOINT            = https://otlp.datadoghq.com/v1/traces
 OTEL_EXPORTER_OTLP_PROTOCOL                   = http/protobuf
 OTEL_EXPORTER_OTLP_HEADERS                    = dd-api-key=<injected by deploy workflow>
 OTEL_SERVICE_NAME                             = subscriber
@@ -107,7 +107,7 @@ ServiceBus__QueueName                         = demo-q
 - The Subscriber's trigger extracts that context (`Functions/TraceContext.cs`) and starts
   a `Consumer` span as a child, so a send → receive shows up as **one distributed trace**.
 - Export is **OTLP only** (`OpenTelemetry.Exporter.OpenTelemetryProtocol`), sent directly
-  to Datadog's US3 OTLP intake (`https://otlp.us3.datadoghq.com/v1/traces`, `http/protobuf`)
+  to Datadog's OTLP intake (`https://otlp.datadoghq.com/v1/traces`, `http/protobuf`)
   authenticated with the `dd-api-key` header. No Datadog or Azure vendor SDK is used.
 
 The Subscriber's received messages can be viewed at the Function App HTTP endpoint:

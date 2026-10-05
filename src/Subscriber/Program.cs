@@ -1,43 +1,35 @@
-using Azure.Identity;
-using Azure.Messaging.ServiceBus;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Subscriber;
 using Subscriber.Services;
 
-var builder = WebApplication.CreateBuilder(args);
+// Opt the Azure SDK into emitting OpenTelemetry ActivitySource spans.
+AppContext.SetSwitch("Azure.Experimental.EnableActivitySource", true);
 
-builder.Services.AddControllersWithViews();
-
-// Register Service Bus client - uses Managed Identity when deployed to Azure VM,
-// falls back to connection string from appsettings for local development
-builder.Services.AddSingleton(sp =>
-{
-    var config = sp.GetRequiredService<IConfiguration>();
-    var fullyQualifiedNamespace = config["ServiceBus:FullyQualifiedNamespace"];
-    var connectionString = config["ServiceBus:ConnectionString"];
-
-    if (!string.IsNullOrEmpty(fullyQualifiedNamespace))
+var host = new HostBuilder()
+    .ConfigureFunctionsWorkerDefaults()
+    .ConfigureServices(services =>
     {
-        return new ServiceBusClient(fullyQualifiedNamespace, new DefaultAzureCredential());
-    }
+        // In-memory stores shared across trigger invocations and the HTTP viewer
+        // (singletons live for the lifetime of the Functions host instance).
+        services.AddSingleton<MessageStore>();
+        services.AddSingleton<QueueMessageStore>();
 
-    return new ServiceBusClient(connectionString);
-});
+        // --- OpenTelemetry (native SDK, OTLP exporter) ---
+        // Exporter endpoint/headers/protocol are read from the standard
+        // OTEL_EXPORTER_OTLP_* environment variables.
+        services.AddOpenTelemetry()
+            .ConfigureResource(resource => resource.AddService(
+                serviceName: Telemetry.ServiceName,
+                serviceVersion: Telemetry.ServiceVersion))
+            .WithTracing(tracing => tracing
+                .AddSource(Telemetry.ActivitySourceName)
+                .AddSource("Azure.Messaging.ServiceBus")
+                .AddHttpClientInstrumentation()
+                .AddOtlpExporter());
+    })
+    .Build();
 
-builder.Services.AddSingleton<MessageStore>();
-builder.Services.AddSingleton<QueueMessageStore>();
-builder.Services.AddSingleton<QueueReaderService>();
-builder.Services.AddHostedService<MessageReceiverService>();
-
-var app = builder.Build();
-
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Home/Error");
-}
-
-app.UseStaticFiles();
-app.UseRouting();
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
-
-app.Run();
+host.Run();

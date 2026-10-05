@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Azure.Messaging.ServiceBus;
 using Publisher.Models;
 
@@ -34,12 +35,21 @@ public class MessagePublisherService
     private async Task<SentMessage> SendAndRecordAsync(
         ServiceBusSender sender, string body, string? subject, List<SentMessage> store)
     {
+        // App-level span that becomes the parent of the Service Bus SDK's
+        // "publish" span, so the whole send shows up as one trace.
+        using var activity = Telemetry.ActivitySource.StartActivity(
+            $"publish {sender.EntityPath}", ActivityKind.Producer);
+
         var message = new ServiceBusMessage(body)
         {
             Subject = subject,
             MessageId = Guid.NewGuid().ToString(),
             ContentType = "text/plain"
         };
+
+        activity?.SetTag("messaging.system", "servicebus");
+        activity?.SetTag("messaging.destination.name", sender.EntityPath);
+        activity?.SetTag("messaging.message.id", message.MessageId);
 
         await sender.SendMessageAsync(message);
 

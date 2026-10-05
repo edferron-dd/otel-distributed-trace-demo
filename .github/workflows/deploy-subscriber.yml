@@ -1,0 +1,49 @@
+name: Deploy Subscriber (Azure Function)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/Subscriber/**'
+      - '.github/workflows/deploy-subscriber.yml'
+  workflow_dispatch:
+
+# Required for OIDC federated authentication to Azure (no stored secrets).
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  PROJECT: src/Subscriber/Subscriber.csproj
+  PUBLISH_DIR: ${{ github.workspace }}/publish-subscriber
+  # Override in repo settings → Variables if your Function App has a different name.
+  APP_NAME: ${{ vars.SUBSCRIBER_APP_NAME || 'otel-distributed-trace-demo-subscriber' }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Publish
+        run: dotnet publish "${{ env.PROJECT }}" -c Release -o "${{ env.PUBLISH_DIR }}"
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure Function App
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.APP_NAME }}
+          package: ${{ env.PUBLISH_DIR }}

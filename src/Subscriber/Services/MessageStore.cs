@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 
 namespace Subscriber.Services;
 
-public class MessageStore
+public class MessageStore : IMessageStore
 {
     private readonly ConcurrentQueue<ReceivedMessage> _messages = new();
     private const int MaxMessages = 100;

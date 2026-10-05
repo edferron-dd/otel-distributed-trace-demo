@@ -41,5 +41,8 @@ Thumbs.db
 appsettings.*.local.json
 secrets.json
 
+# Azure Functions local settings (may contain connection strings)
+local.settings.json
+
 # Logs
 *.log

@@ -52,6 +52,7 @@ jobs:
             az webapp config appsettings set \
               -g "${{ env.RESOURCE_GROUP }}" -n "${{ env.APP_NAME }}" \
               --settings "OTEL_EXPORTER_OTLP_HEADERS=dd-api-key=${{ secrets.DD_API_KEY }}" \
+                         "OTEL_EXPORTER_OTLP_TRACES_HEADERS=dd-api-key=${{ secrets.DD_API_KEY }},compute_stats=true" \
                          "OTEL_EXPORTER_OTLP_LOGS_HEADERS=dd-api-key=${{ secrets.DD_API_KEY }}" \
                          "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://otlp.datadoghq.com/v1/logs" \
                          "OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf" \

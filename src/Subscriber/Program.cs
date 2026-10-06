@@ -1,7 +1,7 @@
 using Microsoft.Azure.Functions.Worker.OpenTelemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using OpenTelemetry.Logs;
+using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Subscriber;
@@ -21,7 +21,9 @@ var host = new HostBuilder()
 
         // --- OpenTelemetry (native SDK, OTLP exporter) ---
         // Exporter endpoint/headers/protocol are read from the standard
-        // OTEL_EXPORTER_OTLP_* environment variables.
+        // OTEL_EXPORTER_OTLP_* environment variables. UseOtlpExporter() is required
+        // for the signal-specific OTEL_EXPORTER_OTLP_{TRACES,LOGS}_* variables; the
+        // per-signal AddOtlpExporter() only honors the general ones.
         services.AddOpenTelemetry()
             .ConfigureResource(resource => resource.AddService(
                 serviceName: Telemetry.ServiceName,
@@ -29,9 +31,9 @@ var host = new HostBuilder()
             .WithTracing(tracing => tracing
                 .AddSource(Telemetry.ActivitySourceName)
                 .AddSource("Azure.Messaging.ServiceBus")
-                .AddHttpClientInstrumentation()
-                .AddOtlpExporter())
-            .WithLogging(logging => logging.AddOtlpExporter())
+                .AddHttpClientInstrumentation())
+            .WithLogging()
+            .UseOtlpExporter()
             // Correlates worker spans/logs with the Functions host invocation.
             .UseFunctionsWorkerDefaults();
     })

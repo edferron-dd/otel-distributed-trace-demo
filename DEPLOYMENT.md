@@ -83,7 +83,8 @@ OTLP intake** (`https://otlp.datadoghq.com/v1/traces` and
 over `http/protobuf`.
 
 > The `dd-api-key` header is **not** stored in Azure by hand. The deploy workflows
-> inject `OTEL_EXPORTER_OTLP_HEADERS` and `OTEL_EXPORTER_OTLP_LOGS_HEADERS`
+> inject `OTEL_EXPORTER_OTLP_HEADERS`, `OTEL_EXPORTER_OTLP_TRACES_HEADERS` (adds
+> `compute_stats=true` for trace metrics) and `OTEL_EXPORTER_OTLP_LOGS_HEADERS`
 > (`dd-api-key=${{ secrets.DD_API_KEY }}`), along with the `OTEL_EXPORTER_OTLP_LOGS_*`
 > endpoint/protocol, at deploy time from the `DD_API_KEY` GitHub secret, so the key only lives in GitHub.
 
@@ -96,6 +97,7 @@ correctly identified and tagged in Datadog (`cloud.platform` differs per host ty
 OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = https://otlp.datadoghq.com/v1/traces
 OTEL_EXPORTER_OTLP_PROTOCOL         = http/protobuf
 OTEL_EXPORTER_OTLP_HEADERS          = dd-api-key=<injected by deploy workflow>
+OTEL_EXPORTER_OTLP_TRACES_HEADERS   = dd-api-key=<injected by deploy workflow>,compute_stats=true
 OTEL_EXPORTER_OTLP_LOGS_ENDPOINT    = https://otlp.datadoghq.com/v1/logs
 OTEL_EXPORTER_OTLP_LOGS_PROTOCOL    = http/protobuf
 OTEL_EXPORTER_OTLP_LOGS_HEADERS     = dd-api-key=<injected by deploy workflow>
@@ -109,6 +111,7 @@ ServiceBus__FullyQualifiedNamespace = central-dd-demo.servicebus.windows.net
 OTEL_EXPORTER_OTLP_TRACES_ENDPOINT            = https://otlp.datadoghq.com/v1/traces
 OTEL_EXPORTER_OTLP_PROTOCOL                   = http/protobuf
 OTEL_EXPORTER_OTLP_HEADERS                    = dd-api-key=<injected by deploy workflow>
+OTEL_EXPORTER_OTLP_TRACES_HEADERS             = dd-api-key=<injected by deploy workflow>,compute_stats=true
 OTEL_EXPORTER_OTLP_LOGS_ENDPOINT              = https://otlp.datadoghq.com/v1/logs
 OTEL_EXPORTER_OTLP_LOGS_PROTOCOL              = http/protobuf
 OTEL_EXPORTER_OTLP_LOGS_HEADERS               = dd-api-key=<injected by deploy workflow>

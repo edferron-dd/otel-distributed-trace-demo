@@ -1,6 +1,6 @@
 using Azure.Identity;
 using Azure.Messaging.ServiceBus;
-using OpenTelemetry.Logs;
+using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Publisher;
@@ -17,7 +17,9 @@ builder.Services.AddControllersWithViews();
 
 // --- OpenTelemetry (native SDK, OTLP exporter) ---
 // Exporter endpoint/headers/protocol are read from the standard
-// OTEL_EXPORTER_OTLP_* environment variables.
+// OTEL_EXPORTER_OTLP_* environment variables. UseOtlpExporter() is required for
+// the signal-specific OTEL_EXPORTER_OTLP_{TRACES,LOGS}_* variables; the
+// per-signal AddOtlpExporter() only honors the general ones.
 builder.Services.AddOpenTelemetry()
     .ConfigureResource(resource => resource.AddService(
         serviceName: Telemetry.ServiceName,
@@ -26,9 +28,9 @@ builder.Services.AddOpenTelemetry()
         .AddSource(Telemetry.ActivitySourceName)
         .AddSource("Azure.Messaging.ServiceBus")
         .AddAspNetCoreInstrumentation()
-        .AddHttpClientInstrumentation()
-        .AddOtlpExporter())
-    .WithLogging(logging => logging.AddOtlpExporter());
+        .AddHttpClientInstrumentation())
+    .WithLogging()
+    .UseOtlpExporter();
 
 // Register Service Bus client - uses Managed Identity when deployed to Azure VM,
 // falls back to connection string from appsettings for local development

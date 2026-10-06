@@ -42,9 +42,9 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # Inject the Datadog OTLP API key (never leaves GitHub secrets). The
-      # endpoint/protocol are already configured on the app; this only sets the
-      # dd-api-key header for the US3 OTLP intake.
+      # Inject the Datadog OTLP API key (never leaves GitHub secrets). The trace
+      # endpoint/protocol are already configured on the app; this sets the
+      # dd-api-key header plus the OTLP logs intake settings.
       - name: Configure Datadog OTLP API key
         uses: azure/cli@v2
         with:
@@ -52,6 +52,9 @@ jobs:
             az webapp config appsettings set \
               -g "${{ env.RESOURCE_GROUP }}" -n "${{ env.APP_NAME }}" \
               --settings "OTEL_EXPORTER_OTLP_HEADERS=dd-api-key=${{ secrets.DD_API_KEY }}" \
+                         "OTEL_EXPORTER_OTLP_LOGS_HEADERS=dd-api-key=${{ secrets.DD_API_KEY }}" \
+                         "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://otlp.datadoghq.com/v1/logs" \
+                         "OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf" \
               -o none
 
       - name: Deploy to Azure Web App

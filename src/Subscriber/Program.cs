@@ -1,5 +1,7 @@
+using Microsoft.Azure.Functions.Worker.OpenTelemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Subscriber;
@@ -28,7 +30,10 @@ var host = new HostBuilder()
                 .AddSource(Telemetry.ActivitySourceName)
                 .AddSource("Azure.Messaging.ServiceBus")
                 .AddHttpClientInstrumentation()
-                .AddOtlpExporter());
+                .AddOtlpExporter())
+            .WithLogging(logging => logging.AddOtlpExporter())
+            // Correlates worker spans/logs with the Functions host invocation.
+            .UseFunctionsWorkerDefaults();
     })
     .Build();
 

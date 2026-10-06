@@ -66,12 +66,15 @@ Grant the service principal **Contributor** (or Website Contributor) scoped to t
 ## 3. App settings to configure in Azure
 
 Both apps read OpenTelemetry config from the standard OTLP environment variables and
-connect to Service Bus with their managed identity. Traces are sent to **Datadog's
-OTLP intake** (`https://otlp.datadoghq.com/v1/traces`) over `http/protobuf`.
+connect to Service Bus with their managed identity. Traces and logs are sent to **Datadog's
+OTLP intake** (`https://otlp.datadoghq.com/v1/traces` and
+[`https://otlp.datadoghq.com/v1/logs`](https://docs.datadoghq.com/opentelemetry/setup/otlp_ingest/logs))
+over `http/protobuf`.
 
 > The `dd-api-key` header is **not** stored in Azure by hand. The deploy workflows
-> inject `OTEL_EXPORTER_OTLP_HEADERS=dd-api-key=${{ secrets.DD_API_KEY }}` at deploy
-> time from the `DD_API_KEY` GitHub secret, so the key only lives in GitHub.
+> inject `OTEL_EXPORTER_OTLP_HEADERS` and `OTEL_EXPORTER_OTLP_LOGS_HEADERS`
+> (`dd-api-key=${{ secrets.DD_API_KEY }}`), along with the `OTEL_EXPORTER_OTLP_LOGS_*`
+> endpoint/protocol, at deploy time from the `DD_API_KEY` GitHub secret, so the key only lives in GitHub.
 
 Per Datadog's [serverless OTLP ingest guide (Azure)](https://docs.datadoghq.com/opentelemetry/setup/otlp_ingest/serverless?tab=azure),
 `OTEL_SERVICE_NAME` and the `cloud.*` resource attributes are set so traces are
@@ -82,6 +85,9 @@ correctly identified and tagged in Datadog (`cloud.platform` differs per host ty
 OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = https://otlp.datadoghq.com/v1/traces
 OTEL_EXPORTER_OTLP_PROTOCOL         = http/protobuf
 OTEL_EXPORTER_OTLP_HEADERS          = dd-api-key=<injected by deploy workflow>
+OTEL_EXPORTER_OTLP_LOGS_ENDPOINT    = https://otlp.datadoghq.com/v1/logs
+OTEL_EXPORTER_OTLP_LOGS_PROTOCOL    = http/protobuf
+OTEL_EXPORTER_OTLP_LOGS_HEADERS     = dd-api-key=<injected by deploy workflow>
 OTEL_SERVICE_NAME                   = publisher
 OTEL_RESOURCE_ATTRIBUTES            = cloud.provider=azure,cloud.platform=azure.app_service,cloud.resource_id=/subscriptions/<sub>/resourceGroups/ferron-psa-rg/providers/Microsoft.Web/sites/otel-distributed-trace-demo-publisher
 ServiceBus__FullyQualifiedNamespace = central-dd-demo.servicebus.windows.net
@@ -92,6 +98,9 @@ ServiceBus__FullyQualifiedNamespace = central-dd-demo.servicebus.windows.net
 OTEL_EXPORTER_OTLP_TRACES_ENDPOINT            = https://otlp.datadoghq.com/v1/traces
 OTEL_EXPORTER_OTLP_PROTOCOL                   = http/protobuf
 OTEL_EXPORTER_OTLP_HEADERS                    = dd-api-key=<injected by deploy workflow>
+OTEL_EXPORTER_OTLP_LOGS_ENDPOINT              = https://otlp.datadoghq.com/v1/logs
+OTEL_EXPORTER_OTLP_LOGS_PROTOCOL              = http/protobuf
+OTEL_EXPORTER_OTLP_LOGS_HEADERS               = dd-api-key=<injected by deploy workflow>
 OTEL_SERVICE_NAME                             = subscriber
 OTEL_RESOURCE_ATTRIBUTES                      = cloud.provider=azure,cloud.platform=azure.functions,cloud.resource_id=/subscriptions/<sub>/resourceGroups/ferron-psa-rg/providers/Microsoft.Web/sites/otel-distributed-trace-demo-subscriber
 ServiceBusConnection__fullyQualifiedNamespace = central-dd-demo.servicebus.windows.net

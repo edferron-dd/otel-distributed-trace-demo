@@ -1,5 +1,6 @@
 using Azure.Identity;
 using Azure.Messaging.ServiceBus;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Publisher;
@@ -26,7 +27,8 @@ builder.Services.AddOpenTelemetry()
         .AddSource("Azure.Messaging.ServiceBus")
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
-        .AddOtlpExporter());
+        .AddOtlpExporter())
+    .WithLogging(logging => logging.AddOtlpExporter());
 
 // Register Service Bus client - uses Managed Identity when deployed to Azure VM,
 // falls back to connection string from appsettings for local development

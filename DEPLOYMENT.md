@@ -71,8 +71,12 @@ Grant the service principal **Contributor** (or Website Contributor) scoped to t
 
 > The workflows deploy on push to `main` (or via `workflow_dispatch`) using the
 > `repo:…@…:ref:refs/heads/main` federated credential — no GitHub environment required.
-> The Datadog `env` tag is `demo`, set via `deployment.environment=demo` in
-> `OTEL_RESOURCE_ATTRIBUTES` on each app.
+> The Datadog `env` tag is `demo`, set via `deployment.environment.name=demo` in
+> `OTEL_RESOURCE_ATTRIBUTES` on each app. Datadog prefers `deployment.environment.name`
+> over the legacy `deployment.environment`. On the Subscriber, the
+> `Microsoft.Azure.Functions.Worker.OpenTelemetry` resource detector sets it from
+> `WEBSITE_SLOT_NAME` (`production`), so `Program.cs` re-applies
+> `OTEL_RESOURCE_ATTRIBUTES` after `UseFunctionsWorkerDefaults()`.
 
 ## 3. App settings to configure in Azure
 
@@ -102,7 +106,7 @@ OTEL_EXPORTER_OTLP_LOGS_ENDPOINT    = https://otlp.datadoghq.com/v1/logs
 OTEL_EXPORTER_OTLP_LOGS_PROTOCOL    = http/protobuf
 OTEL_EXPORTER_OTLP_LOGS_HEADERS     = dd-api-key=<injected by deploy workflow>
 OTEL_SERVICE_NAME                   = publisher
-OTEL_RESOURCE_ATTRIBUTES            = cloud.provider=azure,cloud.platform=azure.app_service,cloud.resource_id=/subscriptions/<sub>/resourceGroups/ferron-psa-rg/providers/Microsoft.Web/sites/otel-distributed-trace-demo-publisher
+OTEL_RESOURCE_ATTRIBUTES            = deployment.environment.name=demo,deployment.environment=demo,cloud.provider=azure,cloud.platform=azure.app_service,cloud.resource_id=/subscriptions/<sub>/resourceGroups/ferron-psa-rg/providers/Microsoft.Web/sites/otel-distributed-trace-demo-publisher
 ServiceBus__FullyQualifiedNamespace = central-dd-demo.servicebus.windows.net
 ```
 
@@ -116,7 +120,7 @@ OTEL_EXPORTER_OTLP_LOGS_ENDPOINT              = https://otlp.datadoghq.com/v1/lo
 OTEL_EXPORTER_OTLP_LOGS_PROTOCOL              = http/protobuf
 OTEL_EXPORTER_OTLP_LOGS_HEADERS               = dd-api-key=<injected by deploy workflow>
 OTEL_SERVICE_NAME                             = subscriber
-OTEL_RESOURCE_ATTRIBUTES                      = cloud.provider=azure,cloud.platform=azure.functions,cloud.resource_id=/subscriptions/<sub>/resourceGroups/ferron-psa-rg/providers/Microsoft.Web/sites/otel-distributed-trace-demo-subscriber
+OTEL_RESOURCE_ATTRIBUTES                      = deployment.environment.name=demo,deployment.environment=demo,cloud.provider=azure,cloud.platform=azure.functions,cloud.resource_id=/subscriptions/<sub>/resourceGroups/ferron-psa-rg/providers/Microsoft.Web/sites/otel-distributed-trace-demo-subscriber
 ServiceBusConnection__fullyQualifiedNamespace = central-dd-demo.servicebus.windows.net
 ServiceBus__TopicName                         = demo-topic
 ServiceBus__SubscriptionName                  = subscriber-subscription

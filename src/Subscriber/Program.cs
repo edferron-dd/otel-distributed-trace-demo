@@ -35,7 +35,11 @@ var host = new HostBuilder()
             .WithLogging()
             .UseOtlpExporter()
             // Correlates worker spans/logs with the Functions host invocation.
-            .UseFunctionsWorkerDefaults();
+            .UseFunctionsWorkerDefaults()
+            // UseFunctionsWorkerDefaults() sets deployment.environment.name from
+            // WEBSITE_SLOT_NAME ("production"); re-apply OTEL_RESOURCE_ATTRIBUTES
+            // afterwards so the configured values take precedence.
+            .ConfigureResource(resource => resource.AddEnvironmentVariableDetector());
     })
     .Build();
 

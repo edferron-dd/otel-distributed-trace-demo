@@ -30,7 +30,7 @@ var host = new HostBuilder()
                 serviceVersion: Telemetry.ServiceVersion))
             .WithTracing(tracing => tracing
                 .AddSource(Telemetry.ActivitySourceName)
-                .AddSource("Azure.Messaging.ServiceBus")
+                .AddSource("Azure.Messaging.ServiceBus.*")
                 .AddHttpClientInstrumentation())
             .WithLogging()
             .UseOtlpExporter()

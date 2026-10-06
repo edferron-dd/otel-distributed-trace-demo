@@ -26,7 +26,7 @@ builder.Services.AddOpenTelemetry()
         serviceVersion: Telemetry.ServiceVersion))
     .WithTracing(tracing => tracing
         .AddSource(Telemetry.ActivitySourceName)
-        .AddSource("Azure.Messaging.ServiceBus")
+        .AddSource("Azure.Messaging.ServiceBus.*")
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation())
     .WithLogging()

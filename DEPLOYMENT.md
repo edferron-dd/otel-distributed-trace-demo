@@ -40,10 +40,21 @@ Create an app registration / user-assigned identity, then add a federated creden
 
 ```bash
 az ad app create --display-name otel-distributed-trace-demo-deploy
-# subject examples (one per deploy target you use):
-#   repo:edferron-dd/otel-distributed-trace-demo:ref:refs/heads/main
-#   repo:edferron-dd/otel-distributed-trace-demo:environment:production
+# This repo uses GitHub's immutable OIDC subject format (owner@id/repo@id), so the
+# credential subject must include the numeric IDs:
+az ad app federated-credential create --id <app-id> --parameters '{
+  "name": "github-main-immutable",
+  "issuer": "https://token.actions.githubusercontent.com",
+  "subject": "repo:edferron-dd@208163196/otel-distributed-trace-demo@1406117791:ref:refs/heads/main",
+  "audiences": ["api://AzureADTokenExchange"]
+}'
 ```
+
+> Check the exact prefix with
+> `gh api repos/edferron-dd/otel-distributed-trace-demo/actions/oidc/customization/sub`
+> (`sub_claim_prefix`). A legacy subject such as
+> `repo:edferron-dd/otel-distributed-trace-demo:ref:refs/heads/main` fails with
+> `AADSTS700213: No matching federated identity record found`.
 
 Grant the service principal **Contributor** (or Website Contributor) scoped to the
 `ferron-psa-rg` resource group.
@@ -59,7 +70,7 @@ Grant the service principal **Contributor** (or Website Contributor) scoped to t
 - `AZURE_RESOURCE_GROUP` (defaults to `ferron-psa-rg`)
 
 > The workflows deploy on push to `main` (or via `workflow_dispatch`) using the
-> `repo:…:ref:refs/heads/main` federated credential — no GitHub environment required.
+> `repo:…@…:ref:refs/heads/main` federated credential — no GitHub environment required.
 > The Datadog `env` tag is `demo`, set via `deployment.environment=demo` in
 > `OTEL_RESOURCE_ATTRIBUTES` on each app.
 

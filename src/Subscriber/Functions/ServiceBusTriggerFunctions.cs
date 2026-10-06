@@ -17,22 +17,30 @@ public class ServiceBusTriggerFunctions(
     QueueMessageStore queueMessageStore,
     ILogger<ServiceBusTriggerFunctions> logger)
 {
+    // Entity names are fixed for this demo. (The %...%% app-setting token syntax
+    // can't be used here because ServiceBus__TopicName is parsed by .NET config
+    // into the nested key ServiceBus:TopicName, which the WebJobs name resolver
+    // won't find — that disables the trigger at indexing time.)
+    private const string TopicName = "demo-topic";
+    private const string SubscriptionName = "subscriber-subscription";
+    private const string QueueName = "demo-q";
+
     [Function(nameof(ProcessTopicMessage))]
     public void ProcessTopicMessage(
         [ServiceBusTrigger(
-            topicName: "%ServiceBus__TopicName%",
-            subscriptionName: "%ServiceBus__SubscriptionName%",
+            topicName: TopicName,
+            subscriptionName: SubscriptionName,
             Connection = "ServiceBusConnection")]
         ServiceBusReceivedMessage message)
-        => Handle(message, messageStore, "demo-topic");
+        => Handle(message, messageStore, TopicName);
 
     [Function(nameof(ProcessQueueMessage))]
     public void ProcessQueueMessage(
         [ServiceBusTrigger(
-            queueName: "%ServiceBus__QueueName%",
+            queueName: QueueName,
             Connection = "ServiceBusConnection")]
         ServiceBusReceivedMessage message)
-        => Handle(message, queueMessageStore, "demo-q");
+        => Handle(message, queueMessageStore, QueueName);
 
     private void Handle(ServiceBusReceivedMessage message, IMessageStore store, string entity)
     {

@@ -36,9 +36,13 @@ public class MessagePublisherService
         ServiceBusSender sender, string body, string? subject, List<SentMessage> store)
     {
         // App-level span that becomes the parent of the Service Bus SDK's
-        // "publish" span, so the whole send shows up as one trace.
+        // "publish" span, so the whole send shows up as one trace. It is Internal
+        // and carries no messaging.destination.* tags: the SDK's own producer
+        // spans represent the send. A Producer span here would make Datadog infer
+        // a demo-q/demo-topic node between it and the SDK spans beneath it,
+        // showing the Publisher on both sides of the queue.
         using var activity = Telemetry.ActivitySource.StartActivity(
-            $"publish {sender.EntityPath}", ActivityKind.Producer);
+            $"publish {sender.EntityPath}", ActivityKind.Internal);
 
         var message = new ServiceBusMessage(body)
         {
@@ -47,8 +51,6 @@ public class MessagePublisherService
             ContentType = "text/plain"
         };
 
-        activity?.SetTag("messaging.system", "servicebus");
-        activity?.SetTag("messaging.destination.name", sender.EntityPath);
         activity?.SetTag("messaging.message.id", message.MessageId);
 
         await sender.SendMessageAsync(message);

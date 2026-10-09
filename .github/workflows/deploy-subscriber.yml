@@ -58,6 +58,18 @@ jobs:
                          "OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf" \
               -o none
 
+      # Tag telemetry with the source revision for Datadog Source Code Integration.
+      # The SHA is the commit this run built, so it changes on every deploy.
+      - name: Configure Datadog Git metadata
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            az functionapp config appsettings set \
+              -g "${{ env.RESOURCE_GROUP }}" -n "${{ env.APP_NAME }}" \
+              --settings "DD_GIT_COMMIT_SHA=${{ github.sha }}" \
+                         "DD_GIT_REPOSITORY_URL=${{ github.server_url }}/${{ github.repository }}" \
+              -o none
+
       - name: Deploy to Azure Function App
         uses: Azure/functions-action@v1
         with:

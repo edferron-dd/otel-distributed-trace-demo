@@ -27,7 +27,8 @@ var host = new HostBuilder()
         services.AddOpenTelemetry()
             .ConfigureResource(resource => resource.AddService(
                 serviceName: Telemetry.ServiceName,
-                serviceVersion: Telemetry.ServiceVersion))
+                serviceVersion: Telemetry.ServiceVersion)
+                .AddAttributes(Telemetry.GitResourceAttributes()))
             .WithTracing(tracing => tracing
                 .AddSource(Telemetry.ActivitySourceName)
                 .AddSource("Azure.Messaging.ServiceBus.*")

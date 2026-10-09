@@ -108,6 +108,8 @@ OTEL_EXPORTER_OTLP_LOGS_HEADERS     = dd-api-key=<injected by deploy workflow>
 OTEL_SERVICE_NAME                   = publisher
 OTEL_RESOURCE_ATTRIBUTES            = deployment.environment.name=demo,deployment.environment=demo,cloud.provider=azure,cloud.platform=azure.app_service,cloud.resource_id=/subscriptions/<sub>/resourceGroups/ferron-psa-rg/providers/Microsoft.Web/sites/otel-distributed-trace-demo-publisher
 ServiceBus__FullyQualifiedNamespace = central-dd-demo.servicebus.windows.net
+DD_GIT_COMMIT_SHA                   = <set by deploy workflow to the built commit>
+DD_GIT_REPOSITORY_URL               = <set by deploy workflow to the GitHub repo URL>
 ```
 
 **Subscriber (Function App → Configuration → Application settings):**
@@ -125,7 +127,14 @@ ServiceBusConnection__fullyQualifiedNamespace = central-dd-demo.servicebus.windo
 ServiceBus__TopicName                         = demo-topic
 ServiceBus__SubscriptionName                  = subscriber-subscription
 ServiceBus__QueueName                         = demo-q
+DD_GIT_COMMIT_SHA                             = <set by deploy workflow to the built commit>
+DD_GIT_REPOSITORY_URL                         = <set by deploy workflow to the GitHub repo URL>
 ```
+
+`DD_GIT_COMMIT_SHA` and `DD_GIT_REPOSITORY_URL` are set on every deploy. Each app copies
+them into the `git.commit.sha` and `git.repository_url` resource attributes (the OTel SDK
+doesn't read `DD_*` variables), which Datadog Source Code Integration uses to link
+telemetry to the commit.
 
 ## 4. Distributed tracing
 

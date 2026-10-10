@@ -1,10 +1,12 @@
 using Microsoft.Azure.Functions.Worker.OpenTelemetry;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Subscriber;
+using Subscriber.Functions;
 using Subscriber.Services;
 using ServiceBusTelemetry;
 
@@ -19,6 +21,12 @@ var host = new HostBuilder()
         // (singletons live for the lifetime of the Functions host instance).
         services.AddSingleton<MessageStore>();
         services.AddSingleton<QueueMessageStore>();
+
+        // Separate tracer providers that report the queue/topic as its own service
+        // (see QueueHopTelemetry). Their sources stay out of the provider below.
+        services.AddSingleton(sp => new QueueHopTelemetry(
+            sp.GetRequiredService<IConfiguration>(),
+            [ServiceBusTriggerFunctions.QueueName, ServiceBusTriggerFunctions.TopicName]));
 
         // --- OpenTelemetry (native SDK, OTLP exporter) ---
         // Exporter endpoint/headers/protocol are read from the standard

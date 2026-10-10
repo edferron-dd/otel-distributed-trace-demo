@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'src/Subscriber/**'
+      - 'src/Shared/**'
       - '.github/workflows/deploy-subscriber.yml'
   workflow_dispatch:
 

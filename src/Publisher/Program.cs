@@ -5,6 +5,7 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Publisher;
 using Publisher.Services;
+using ServiceBusTelemetry;
 
 // Opt the Azure SDK into emitting OpenTelemetry ActivitySource spans. This also
 // makes the Service Bus client inject W3C trace context (traceparent) into each
@@ -28,6 +29,7 @@ builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing
         .AddSource(Telemetry.ActivitySourceName)
         .AddSource("Azure.Messaging.ServiceBus.*")
+        .AddProcessor(new ServiceBusPeerServiceProcessor())
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation())
     .WithLogging()

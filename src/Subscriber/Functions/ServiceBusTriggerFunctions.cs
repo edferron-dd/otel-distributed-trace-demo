@@ -16,6 +16,7 @@ namespace Subscriber.Functions;
 public class ServiceBusTriggerFunctions(
     MessageStore messageStore,
     QueueMessageStore queueMessageStore,
+    QueueHopTelemetry queueHops,
     IConfiguration configuration,
     ILogger<ServiceBusTriggerFunctions> logger)
 {
@@ -26,9 +27,9 @@ public class ServiceBusTriggerFunctions(
     // can't be used here because ServiceBus__TopicName is parsed by .NET config
     // into the nested key ServiceBus:TopicName, which the WebJobs name resolver
     // won't find — that disables the trigger at indexing time.)
-    private const string TopicName = "demo-topic";
-    private const string SubscriptionName = "subscriber-subscription";
-    private const string QueueName = "demo-q";
+    internal const string TopicName = "demo-topic";
+    internal const string SubscriptionName = "subscriber-subscription";
+    internal const string QueueName = "demo-q";
 
     [Function(nameof(ProcessTopicMessage))]
     public void ProcessTopicMessage(
@@ -50,11 +51,17 @@ public class ServiceBusTriggerFunctions(
     private void Handle(
         ServiceBusReceivedMessage message, IMessageStore store, string entity, string? subscription)
     {
-        var parentContext = TraceContext.Extract(message);
+        var publisherContext = TraceContext.Extract(message);
+
+        // Queue-hop span (service demo-q / demo-topic) between the Publisher's
+        // producer span and the consumer span below, so the flow map draws
+        // publisher → entity → subscriber rather than publisher → subscriber.
+        var parentContext = queueHops.RecordHop(message, entity, subscription, publisherContext);
 
         // The Functions worker's invocation span (Activity.Current here) starts its
-        // own trace. Parent the consumer span on the Publisher's trace instead, and
-        // link back to the invocation span so the two can still be navigated.
+        // own trace. Parent the consumer span on the queue hop (in the Publisher's
+        // trace) instead, and link back to the invocation span so the two can still
+        // be navigated.
         var links = Activity.Current is { } invocation
             ? new[] { new ActivityLink(invocation.Context) }
             : null;

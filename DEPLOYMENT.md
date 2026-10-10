@@ -160,6 +160,17 @@ Datadog's agentless OTLP intake has not yet been confirmed to preserve an explic
 `peer.service`; verify the stored tags and map after deployment rather than
 assuming the application tags guarantee the resulting nodes.
 
+The Subscriber also emits a queue-hop span for each message (`QueueHopTelemetry.cs`),
+reported under a service named after the entity (`demo-q` or `demo-topic`). It is a
+child of the Publisher's producer span and the parent of the Subscriber's consumer
+span, and covers the time from enqueue to receive. Because the flow map draws one edge
+per cross-service parent→child span, this is what places the entity between the two
+services: `publisher → demo-q → subscriber` and `publisher → demo-topic → subscriber`.
+Each entity has its own tracer provider (`service.name` is per provider) exporting to
+the same OTLP traces endpoint. `demo-q` and `demo-topic` therefore appear as
+instrumented services in Datadog. To verify, search
+`service:(demo-q OR demo-topic) operation_name:servicebus.queue env:demo`.
+
 Run the destination-tagging regression checks with
 `dotnet run --project tests/ServiceBusTelemetry.Tests` using the .NET 10 SDK.
 These checks cover completed activities and do not contact Azure or Datadog.

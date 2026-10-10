@@ -6,6 +6,7 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Subscriber;
 using Subscriber.Services;
+using ServiceBusTelemetry;
 
 // Opt the Azure SDK into emitting OpenTelemetry ActivitySource spans.
 AppContext.SetSwitch("Azure.Experimental.EnableActivitySource", true);
@@ -32,6 +33,7 @@ var host = new HostBuilder()
             .WithTracing(tracing => tracing
                 .AddSource(Telemetry.ActivitySourceName)
                 .AddSource("Azure.Messaging.ServiceBus.*")
+                .AddProcessor(new ServiceBusPeerServiceProcessor())
                 .AddHttpClientInstrumentation())
             .WithLogging()
             .UseOtlpExporter()

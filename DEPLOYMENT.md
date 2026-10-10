@@ -146,5 +146,23 @@ telemetry to the commit.
   to Datadog's OTLP intake (`https://otlp.datadoghq.com/v1/traces`, `http/protobuf`)
   authenticated with the `dd-api-key` header. No Datadog or Azure vendor SDK is used.
 
+Service Bus spans explicitly set `peer.service` to their queue or topic name
+(`demo-q` or `demo-topic`). The SDK span processor uses the destination attributes
+at span completion; app-level publish and process spans set the entity directly.
+Topic subscription paths identify the topic as the peer. Existing messaging
+attributes, service names and W3C context propagation are unchanged.
+
+After deploying both apps, publish a message to each destination and check the
+new traces in `env:demo`. The outgoing client/producer spans and incoming consumer
+spans should retain `peer.service:demo-q` or `peer.service:demo-topic`, and the
+service map and flow view should show Publisher → queue/topic → Subscriber.
+Datadog's agentless OTLP intake has not yet been confirmed to preserve an explicit
+`peer.service`; verify the stored tags and map after deployment rather than
+assuming the application tags guarantee the resulting nodes.
+
+Run the destination-tagging regression checks with
+`dotnet run --project tests/ServiceBusTelemetry.Tests` using the .NET 10 SDK.
+These checks cover completed activities and do not contact Azure or Datadog.
+
 The Subscriber's received messages can be viewed at the Function App HTTP endpoint:
 `https://<subscriber-app>.azurewebsites.net/api/messages`.

@@ -69,6 +69,7 @@ public class ServiceBusTriggerFunctions(
         activity?.SetTag("messaging.operation", "process");
         activity?.SetTag("messaging.operation.type", "process");
         activity?.SetTag("messaging.destination.name", entity);
+        activity?.SetTag("peer.service", entity);
         activity?.SetTag("messaging.destination.subscription.name", subscription);
         activity?.SetTag("server.address", _namespace);
         activity?.SetTag("messaging.message.id", message.MessageId);

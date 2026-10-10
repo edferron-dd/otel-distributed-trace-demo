@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'src/Publisher/**'
+      - 'src/Shared/**'
       - '.github/workflows/deploy-publisher.yml'
   workflow_dispatch:
 

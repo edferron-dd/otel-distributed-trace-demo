@@ -42,7 +42,12 @@ var host = new HostBuilder()
                 .AddSource(Telemetry.ActivitySourceName)
                 .AddSource("Azure.Messaging.ServiceBus.*")
                 .AddProcessor(new ServiceBusPeerServiceProcessor())
-                .AddHttpClientInstrumentation())
+                .AddHttpClientInstrumentation(options =>
+                {
+                    // Local Functions host RPC must not become an inferred service.
+                    options.FilterHttpRequestMessage = request => request.RequestUri?.IsLoopback != true
+                        && !string.Equals(request.RequestUri?.Host, "localhost", StringComparison.OrdinalIgnoreCase);
+                }))
             .WithLogging()
             .UseOtlpExporter()
             // Correlates worker spans/logs with the Functions host invocation.

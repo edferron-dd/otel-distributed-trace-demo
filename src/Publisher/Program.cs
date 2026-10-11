@@ -31,7 +31,12 @@ builder.Services.AddOpenTelemetry()
         .AddSource("Azure.Messaging.ServiceBus.*")
         .AddProcessor(new ServiceBusPeerServiceProcessor())
         .AddAspNetCoreInstrumentation()
-        .AddHttpClientInstrumentation())
+        .AddHttpClientInstrumentation(options =>
+        {
+            // Local managed-identity calls must not become inferred services.
+            options.FilterHttpRequestMessage = request => request.RequestUri?.IsLoopback != true
+                && !string.Equals(request.RequestUri?.Host, "localhost", StringComparison.OrdinalIgnoreCase);
+        }))
     .WithLogging()
     .UseOtlpExporter();
 

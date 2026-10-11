@@ -26,12 +26,9 @@ public sealed class QueueHopTelemetry : IDisposable
     private const string SourcePrefix = "ServiceBus.Hop.";
 
     private readonly Dictionary<string, (ActivitySource Source, TracerProvider Provider)> _hops = [];
-    private readonly string? _namespace;
 
     public QueueHopTelemetry(IConfiguration configuration, IEnumerable<string> entities)
     {
-        _namespace = configuration["ServiceBusConnection:fullyQualifiedNamespace"];
-
         foreach (var entity in entities)
         {
             var sourceName = SourcePrefix + entity;
@@ -64,8 +61,10 @@ public sealed class QueueHopTelemetry : IDisposable
         if (parentContext == default || !_hops.TryGetValue(entity, out var hop))
             return parentContext;
 
+        // This represents time inside the entity, so it must not create an
+        // inferred peer. Cross-service parentage supplies the flow-map edges.
         using var activity = hop.Source.StartActivity(
-            entity, ActivityKind.Consumer, parentContext, startTime: message.EnqueuedTime);
+            entity, ActivityKind.Internal, parentContext, startTime: message.EnqueuedTime);
 
         if (activity is null)
             return parentContext;
@@ -73,10 +72,8 @@ public sealed class QueueHopTelemetry : IDisposable
         activity.SetTag("operation.name", "servicebus.queue");
         activity.SetTag("resource.name", entity);
         activity.SetTag("messaging.system", "servicebus");
-        activity.SetTag("messaging.destination.name", entity);
         activity.SetTag("messaging.destination.subscription.name", subscription);
         activity.SetTag("messaging.message.id", message.MessageId);
-        activity.SetTag("server.address", _namespace);
 
         // Ends here, so the span covers only the wait in the queue; processing is
         // the consumer span's job.

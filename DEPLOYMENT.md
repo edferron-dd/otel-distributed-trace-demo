@@ -166,10 +166,23 @@ child of the Publisher's producer span and the parent of the Subscriber's consum
 span, and covers the time from enqueue to receive. Because the flow map draws one edge
 per cross-service parent→child span, this is what places the entity between the two
 services: `publisher → demo-q → subscriber` and `publisher → demo-topic → subscriber`.
+The hop uses `ActivityKind.Internal` and omits `messaging.destination.name` and
+`server.address` so Datadog does not treat it as a peer call and append an inferred
+entity. Its entity is identified by `service.name` and `resource.name`; the producer
+and consumer retain their messaging destination tags.
 Each entity has its own tracer provider (`service.name` is per provider) exporting to
 the same OTLP traces endpoint. `demo-q` and `demo-topic` therefore appear as
 instrumented services in Datadog. To verify, search
 `service:(demo-q OR demo-topic) operation_name:servicebus.queue env:demo`.
+
+Both applications filter loopback requests out of HTTP client instrumentation
+using `RequestUri.IsLoopback` and a case-insensitive `localhost` check. This excludes
+local managed-identity token requests and Functions host RPC (including `127.0.0.1`,
+`localhost`, and IPv6 loopback) so they do not introduce inferred HTTP entities.
+External HTTP requests remain traced.
+After deploying both applications, verify a new message trace retains the producer
+→ hop → consumer parent chain, and check the flow map using a time window after
+deployment so older spans do not keep the extra inferred entities visible.
 
 Run the destination-tagging regression checks with
 `dotnet run --project tests/ServiceBusTelemetry.Tests` using the .NET 10 SDK.

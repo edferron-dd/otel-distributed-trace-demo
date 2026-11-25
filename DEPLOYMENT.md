@@ -146,15 +146,20 @@ telemetry to the commit.
   to Datadog's OTLP intake (`https://otlp.datadoghq.com/v1/traces`, `http/protobuf`)
   authenticated with the `dd-api-key` header. No Datadog or Azure vendor SDK is used.
 
-Service Bus spans explicitly set `peer.service` to their queue or topic name
-(`demo-q` or `demo-topic`). The SDK span processor uses the destination attributes
-at span completion; app-level publish and process spans set the entity directly.
+Service Bus producer and consumer spans explicitly set `peer.service` to their queue
+or topic name (`demo-q` or `demo-topic`). The SDK span processor uses the destination
+attributes at span completion; the app-level process span sets the entity directly.
 Topic subscription paths identify the topic as the peer. Existing messaging
 attributes, service names and W3C context propagation are unchanged.
 
+The SDK's client send span (`servicebus.publish`) has every attribute Datadog reads
+as a peer tag removed (`peer.*`, `messaging.destination*`, `messaging.system`,
+`server.address`, `net.peer.name`). It has no cross-service child, so those tags made
+Datadog draw a second, inferred `demo-q`/`demo-topic` node beside the instrumented one.
+
 After deploying both apps, publish a message to each destination and check the
-new traces in `env:demo`. The outgoing client/producer spans and incoming consumer
-spans should retain `peer.service:demo-q` or `peer.service:demo-topic`, and the
+new traces in `env:demo`. The producer and consumer spans should retain
+`peer.service:demo-q` or `peer.service:demo-topic`, and the
 service map and flow view should show Publisher → queue/topic → Subscriber.
 Datadog's agentless OTLP intake has not yet been confirmed to preserve an explicit
 `peer.service`; verify the stored tags and map after deployment rather than

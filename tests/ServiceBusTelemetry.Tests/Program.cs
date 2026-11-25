@@ -14,7 +14,7 @@ ActivitySource.AddActivityListener(listener);
 
 foreach (var destination in new[] { "demo-q", "demo-topic" })
 {
-    foreach (var kind in new[] { ActivityKind.Client, ActivityKind.Producer, ActivityKind.Consumer })
+    foreach (var kind in new[] { ActivityKind.Producer, ActivityKind.Consumer })
     {
         foreach (var key in new[] { "messaging.destination.name", "messaging.destination", "peer.messaging.destination" })
         {
@@ -41,6 +41,24 @@ using (var activity = source.StartActivity("publish", ActivityKind.Producer)!)
     scenarios++;
 }
 
+// The SDK's client send span loses every peer-tag source so Datadog does not
+// infer a second entity from it; other attributes and its parentage are kept.
+using (var source = new ActivitySource("Azure.Messaging.ServiceBus.ServiceBusSender"))
+{
+    var parent = new ActivityContext(ActivityTraceId.CreateRandom(), ActivitySpanId.CreateRandom(),
+        ActivityTraceFlags.Recorded, null, isRemote: true);
+    using var activity = source.StartActivity("servicebus.publish", ActivityKind.Client, parent)!;
+    foreach (var key in ServiceBusPeerService.PeerTagSources)
+        activity.SetTag(key, "value");
+    activity.SetTag("messaging.operation", "publish");
+    activity.Stop();
+    foreach (var key in ServiceBusPeerService.PeerTagSources)
+        AssertEqual(null, activity.GetTagItem(key), $"client span {key} removed");
+    AssertEqual("publish", activity.GetTagItem("messaging.operation"), "client span other tags kept");
+    AssertEqual(parent.SpanId, activity.ParentSpanId, "client span parent");
+    scenarios++;
+}
+
 // Do not retag HTTP, other SDKs, lookalike sources, or internal/server spans.
 CheckUnchanged("System.Net.Http", ActivityKind.Client, "demo-q");
 CheckUnchanged("Azure.Storage.Blobs", ActivityKind.Client, "demo-q");
@@ -50,7 +68,7 @@ CheckUnchanged("Azure.Messaging.ServiceBus.ServiceBusSender", ActivityKind.Inter
 CheckUnchanged("Azure.Messaging.ServiceBus.ServiceBusReceiver", ActivityKind.Server, "demo-q");
 
 // A missing destination must not fall back to the namespace or erase a peer.
-CheckUnchanged("Azure.Messaging.ServiceBus.ServiceBusSender", ActivityKind.Client, null);
+CheckUnchanged("Azure.Messaging.ServiceBus.ServiceBusSender", ActivityKind.Producer, null);
 CheckUnchanged("Azure.Messaging.ServiceBus.ServiceBusSender", ActivityKind.Producer, " ");
 using (var source = new ActivitySource("Azure.Messaging.ServiceBus.ServiceBusSender"))
 using (var activity = source.StartActivity("publish", ActivityKind.Producer)!)

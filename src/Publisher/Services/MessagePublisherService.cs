@@ -43,7 +43,6 @@ public class MessagePublisherService
         // showing the Publisher on both sides of the queue.
         using var activity = Telemetry.ActivitySource.StartActivity(
             $"publish {sender.EntityPath}", ActivityKind.Internal);
-        activity?.SetTag("peer.service", sender.EntityPath);
 
         var message = new ServiceBusMessage(body)
         {
